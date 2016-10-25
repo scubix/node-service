@@ -77,9 +77,10 @@ function diffAndReverseAndApplyWithHint(lhs, rhs, hint){
     var reportDiffs = []; // Separate because of clone changes
 
     if (hintUsed.length < hint.length){ // SHORTCUT
-         if (!(hint[i] in lhsWithHint)){ // SHORTCUT ADD
-             reportDiffs.push({kind: 'N', path: hintUsed.concat(hint[i]), rhs: rhsWithHint[hint[i]]});
-             lhsWithHint[hint[i]] = clone(rhsWithHint[hint[i]]);
+         if (!(hint[i] in lhsWithHint) && (hint[i] in rhsWithHint)){ // SHORTCUT ADD
+             var cloned = clone(rhsWithHint[hint[i]]);
+             reportDiffs.push({kind: 'N', path: hintUsed.concat(hint[i]), rhs: cloned});
+             lhsWithHint[hint[i]] = cloned
          }else if (!(hint[i] in rhsWithHint)){ // SHORTCUT DEL
              reportDiffs.push({kind: 'D', path: hintUsed.concat(hint[i]), lhs: lhsWithHint[hint[i]]});
              delete lhsWithHint[hint[i]];
