@@ -78,10 +78,10 @@ function diffAndReverseAndApplyWithHint(lhs, rhs, hint){
 
     if (hintUsed.length < hint.length){ // SHORTCUT
          if (!(hint[i] in lhsWithHint)){ // SHORTCUT ADD
-             reportDiffs.push({kind: 'D', path: hintUsed.concat(hint[i]), lhs: rhsWithHint[hint[i]]});
+             reportDiffs.push({kind: 'A', path: hintUsed.concat(hint[i]), rhs: rhsWithHint[hint[i]]});
              lhsWithHint[hint[i]] = rhsWithHint[hint[i]];
          }else if (!(hint[i] in rhsWithHint)){ // SHORTCUT DEL
-             reportDiffs.push({kind: 'N', path: hintUsed.concat(hint[i]), rhs: lhsWithHint[hint[i]]});
+             reportDiffs.push({kind: 'D', path: hintUsed.concat(hint[i]), lhs: lhsWithHint[hint[i]]});
              delete lhsWithHint[hint[i]];
          }else{
              throw new Error("Wut?");
