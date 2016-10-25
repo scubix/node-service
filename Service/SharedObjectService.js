@@ -78,8 +78,8 @@ function diffAndReverseAndApplyWithHint(lhs, rhs, hint){
 
     if (hintUsed.length < hint.length){ // SHORTCUT
          if (!(hint[i] in lhsWithHint)){ // SHORTCUT ADD
-             reportDiffs.push({kind: 'A', path: hintUsed.concat(hint[i]), rhs: rhsWithHint[hint[i]]});
-             lhsWithHint[hint[i]] = rhsWithHint[hint[i]];
+             reportDiffs.push({kind: 'N', path: hintUsed.concat(hint[i]), rhs: rhsWithHint[hint[i]]});
+             lhsWithHint[hint[i]] = clone(rhsWithHint[hint[i]]);
          }else if (!(hint[i] in rhsWithHint)){ // SHORTCUT DEL
              reportDiffs.push({kind: 'D', path: hintUsed.concat(hint[i]), lhs: lhsWithHint[hint[i]]});
              delete lhsWithHint[hint[i]];
@@ -89,7 +89,6 @@ function diffAndReverseAndApplyWithHint(lhs, rhs, hint){
     }else {
 
         var diffs = differ(lhsWithHint, rhsWithHint);
-
 
         if (diffs) {
             for (var i = diffs.length - 1; i >= 0; i--) {
