@@ -74,20 +74,33 @@ function diffAndReverseAndApplyWithHint(lhs, rhs, hint){
 
     var hintUsed = hint.slice(0,i);
 
-
-    var diffs = differ(lhsWithHint, rhsWithHint);
-
     var reportDiffs = []; // Separate because of clone changes
 
-    if (diffs) {
-        for(var i = diffs.length-1; i >= 0; i--){
-            var diff = clone(diffs[i]);
-            if(diff.path)
-                diff.path = hintUsed.concat(diff.path);
-            else
-                diff.path = hintUsed;
-            differ.applyChange(lhs,rhs, diff);
-            reportDiffs.push(diff);
+    if (hintUsed.length < hint.length){ // SHORTCUT
+         if (!(hint[i] in lhsWithHint)){ // SHORTCUT ADD
+             reportDiffs.push(new differ.DiffNew(hintUsed.concat(hint[i], rhsWithHint[hint[i]])));
+             lhsWithHint[hint[i]] = rhsWithHint[hint[i]];
+         }else if (!(hint[i] in rhsWithHint)){ // SHORTCUT DEL
+             reportDiffs.push(new differ.DiffDeleted(hintUsed.concat(hint[i], lhsWithHint[hint[i]])));
+             delete lhsWithHint[hint[i]];
+         }else{
+             throw new Error("Wut?");
+         }
+    }else {
+
+        var diffs = differ(lhsWithHint, rhsWithHint);
+
+
+        if (diffs) {
+            for (var i = diffs.length - 1; i >= 0; i--) {
+                var diff = clone(diffs[i]);
+                if (diff.path)
+                    diff.path = hintUsed.concat(diff.path);
+                else
+                    diff.path = hintUsed;
+                differ.applyChange(lhs, rhs, diff);
+                reportDiffs.push(diff);
+            }
         }
     }
 
