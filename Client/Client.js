@@ -72,7 +72,7 @@ class Client {
                 console.log(endpoint.name, 'connected');
                 this[endpoint.name].emit('connected')
                 if (endpoint.type == 'SharedObject') {
-                    if(this[endpoint.name].ready == false) this[endpoint.name]._init();
+                    if(this[endpoint.name].ready == false && this[endpoint.name].subscribed) this[endpoint.name]._init();
                 }
             }
         }

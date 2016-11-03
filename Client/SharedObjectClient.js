@@ -14,17 +14,20 @@ class SharedObjectClient extends EventEmitter{
         this.endpoint = endpoint;
         this.initTransport = transports.rpc;
         this.updateTransport = transports.source;
+        this.subscribed = false;
 
         this._flushData();
     }
 
     subscribe(){
         this.updateTransport.subscribe("_SO_" + this.endpoint.name);
+        this.subscribed = true;
         this._init();
     }
 
     unsubscribe(){
         this.updateTransport.unsubscribe("_SO_" + this.endpoint.name);
+        this.subscribed = false;
     }
 
     _processMessage(data){
