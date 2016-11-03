@@ -20,6 +20,7 @@ class SharedObjectClient extends EventEmitter{
 
     subscribe(){
         this.updateTransport.subscribe("_SO_" + this.endpoint.name);
+        this._init();
     }
 
     unsubscribe(){
