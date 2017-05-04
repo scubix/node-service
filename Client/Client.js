@@ -1,4 +1,5 @@
 "use strict";
+var HEARTBEAT_SECONDS = 10;
 
 var zmq = require("zmq");
 var axon = require("axon");
@@ -49,9 +50,18 @@ class Client {
         var msock = new MonitoredSocket('sub');
         this.transports.source = msock.sock;
         this.transports.source.connect(hostname);
+        this._sourceHostname = hostname;
+        this._setupHeartbeat();
         this.transports.source.on('message', this._sourceCallback.bind(this));
         msock.on('disconnected', this._sourceClosed.bind(this));
         msock.on('connected', this._sourceConnected.bind(this));
+    }
+
+    _setupHeartbeat(){
+        this['_heartbeat'] = {
+            _processMessage: this._resetHeartbeatTimeout.bind(this)
+        }
+        this.transports.source.subscribe('_heartbeat');
     }
 
     _setupSink(hostname){
@@ -66,6 +76,7 @@ class Client {
     }
 
     _sourceConnected(){
+        this._heartbeatTimeout = setTimeout(this._heartbeatFailed.bind(this), HEARTBEAT_SECONDS * 1000);
         // Loop endpoints
         for(let endpoint of this.descriptor.endpoints) {
             if (endpoint.type == 'Source' || endpoint.type == 'SharedObject') {
@@ -79,6 +90,7 @@ class Client {
     }
 
     _sourceClosed(){
+        clearTimeout(this._heartbeatTimeout);
         // Loop endpoints
         for(let endpoint of this.descriptor.endpoints) {
             if (endpoint.type == 'Source' || endpoint.type == 'SharedObject') {
@@ -89,6 +101,18 @@ class Client {
                 }
             }
         }
+    }
+
+    _resetHeartbeatTimeout(){
+        clearTimeout(this._heartbeatTimeout);
+        this._heartbeatTimeout = setTimeout(this._heartbeatFailed.bind(this), HEARTBEAT_SECONDS * 1000);
+    }
+
+    _heartbeatFailed(){
+        console.error('Heartbeat failed source transport -> Closing connection');
+        this.transports.source.disconnect(this._sourceHostname)
+        this._sourceClosed();
+        this.transports.source.connect(this._sourceHostname)
     }
 
     _setupRpc(hostname){
