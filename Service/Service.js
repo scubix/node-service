@@ -45,6 +45,18 @@ class Service {
         var sock = new zmq.socket('pub');
         this.transports.source = sock;
         sock.bind(hostname);
+        this._setupHeartbeat();
+    }
+
+    _setupHeartbeat(){
+        setInterval(this._sendHeartbeat.bind(this), 5 * 1000);
+    }
+
+    _sendHeartbeat(){
+        var OTW = {
+            endpoint: '_heartbeat'
+        };
+        this.transports.source.send([OTW.endpoint, JSON.stringify(OTW)]);
     }
 
     _setupSink(hostname){
