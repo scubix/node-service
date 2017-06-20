@@ -109,7 +109,7 @@ class Client {
     }
 
     _heartbeatFailed(){
-        console.error('Heartbeat failed source transport -> Closing connection');
+        console.error('Heartbeat failed source transport -> Closing connection', this._sourceHostname, this.descriptor.endpoints.map((item)=>{return item.name}).join(','));
         this.transports.source.disconnect(this._sourceHostname)
         this._sourceClosed();
         this.transports.source.connect(this._sourceHostname)
