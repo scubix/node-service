@@ -16,6 +16,6 @@
     "deep-diff": "^0.3.3",
     "json.date-extensions": "^1.2.2",
     "schema-inspector": "^1.5.7",
-    "zmq": "^2.13.0"
+    "zeromq": "4.5.0"
   }
 }
