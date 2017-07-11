@@ -1,6 +1,6 @@
 "use strict";
 
-var zmq = require("zmq");
+var zmq = require("zeromq");
 var axon = require("axon");
 
 var RPCService = require("./RPCService");

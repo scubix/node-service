@@ -1,5 +1,5 @@
 "use strict";
-var zmq = require("zmq");
+var zmq = require("zeromq");
 var EventEmitter = require("events").EventEmitter;
 
 class MonitoredSocket extends EventEmitter {
