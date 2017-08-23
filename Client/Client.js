@@ -1,6 +1,6 @@
 "use strict";
 var ENABLE_HEARTBEAT = true;
-var HEARTBEAT_SECONDS = 10;
+var HEARTBEAT_SECONDS = 500;
 
 var zmq = require("zeromq");
 var axon = require("axon");
@@ -29,16 +29,16 @@ class Client {
     _setupTransports() {
         for (let transport in this.descriptor.transports) {
             switch (transport) {
-                case 'source':
+                case "source":
                     this._setupSource(this.descriptor.transports.source.client);
                     break;
-                case 'sink':
+                case "sink":
                     this._setupSink(this.descriptor.transports.sink.client);
                     break;
-                case 'rpc':
+                case "rpc":
                     this._setupRpc(this.descriptor.transports.rpc.client);
                     break;
-                case 'pushpull':
+                case "pushpull":
                     this._setupPull();
                     break;
                 default:
@@ -48,27 +48,27 @@ class Client {
     }
 
     _setupSource(hostname) {
-        var msock = new MonitoredSocket('sub');
+        var msock = new MonitoredSocket("sub");
         this.transports.source = msock.sock;
         this.transports.source.connect(hostname);
         this._sourceHostname = hostname;
         if (ENABLE_HEARTBEAT) {
             this._setupHeartbeat();
         }
-        this.transports.source.on('message', this._sourceCallback.bind(this));
-        msock.on('disconnected', this._sourceClosed.bind(this));
-        msock.on('connected', this._sourceConnected.bind(this));
+        this.transports.source.on("message", this._sourceCallback.bind(this));
+        msock.on("disconnected", this._sourceClosed.bind(this));
+        msock.on("connected", this._sourceConnected.bind(this));
     }
 
     _setupHeartbeat() {
-        this['_heartbeat'] = {
+        this["_heartbeat"] = {
             _processMessage: this._resetHeartbeatTimeout.bind(this)
         }
-        this.transports.source.subscribe('_heartbeat');
+        this.transports.source.subscribe("_heartbeat");
     }
 
     _setupSink(hostname) {
-        var sock = new zmq.socket('push');
+        var sock = new zmq.socket("push");
         this.transports.sink = sock;
         sock.connect(hostname);
     }
@@ -84,10 +84,10 @@ class Client {
         }
         // Loop endpoints
         for (let endpoint of this.descriptor.endpoints) {
-            if (endpoint.type == 'Source' || endpoint.type == 'SharedObject') {
-                console.log(endpoint.name, 'connected');
-                this[endpoint.name].emit('connected')
-                if (endpoint.type == 'SharedObject') {
+            if (endpoint.type == "Source" || endpoint.type == "SharedObject") {
+                console.log(endpoint.name, "connected");
+                this[endpoint.name].emit("connected")
+                if (endpoint.type == "SharedObject") {
                     if (this[endpoint.name].ready == false && this[endpoint.name].subscribed) this[endpoint.name]._init();
                 }
             }
@@ -98,10 +98,10 @@ class Client {
         clearTimeout(this._heartbeatTimeout);
         // Loop endpoints
         for (let endpoint of this.descriptor.endpoints) {
-            if (endpoint.type == 'Source' || endpoint.type == 'SharedObject') {
-                console.log(endpoint.name, 'disconnected');
-                this[endpoint.name].emit('disconnected');
-                if (endpoint.type == 'SharedObject') {
+            if (endpoint.type == "Source" || endpoint.type == "SharedObject") {
+                console.log(endpoint.name, "disconnected");
+                this[endpoint.name].emit("disconnected");
+                if (endpoint.type == "SharedObject") {
                     this[endpoint.name]._flushData();
                 }
             }
@@ -114,24 +114,30 @@ class Client {
     }
 
     _heartbeatFailed() {
-        console.error('Heartbeat failed source transport -> Closing connection', this._sourceHostname, this.descriptor.endpoints.map((item) => {
-            return item.name
-        }).join(','));
+        var endpointList = this.descriptor.endpoints.map((item) => {
+            return item.name;
+        }).join(",");
+        console.error("Heartbeat failed source transport -> Closing connection", this._sourceHostname, endpointList);
+        /*
         this.transports.source.disconnect(this._sourceHostname);
         this._sourceClosed();
-        this.transports.source.connect(this._sourceHostname)
+        this.transports.source.connect(this._sourceHostname);
+        */
+        if (global.alerts) {
+            global.alerts.emit("heartbeat_failed", "Heartbeat failed source transport: " + endpointList + " (this._sourceHostname)");
+        }
     }
 
     _setupRpc(hostname) {
-        var sock = new axon.socket('req');
+        var sock = new axon.socket("req");
         sock.connect(hostname);
         this.transports.rpc = sock;
     }
 
     _setupPull(hostname) {
         var sock = new zmq.socket("pull");
-        // DON'T CONNECT! Client must explicitly ask!
-        sock.on('message', this._pullCallback.bind(this));
+        // DON"T CONNECT! Client must explicitly ask!
+        sock.on("message", this._pullCallback.bind(this));
         this.transports.pushpull = sock;
     }
 
@@ -146,24 +152,24 @@ class Client {
     _setupEndpoints() {
         for (let endpoint of this.descriptor.endpoints) {
             switch (endpoint.type) {
-                case 'RPC':
+                case "RPC":
                     this[endpoint.name] = new RPCClient(endpoint, this.transports);
                     break;
-                case 'Source':
+                case "Source":
                     this[endpoint.name] = new SourceClient(endpoint, this.transports);
                     break;
-                case 'SharedObject':
+                case "SharedObject":
                     this[endpoint.name] = new SharedObjectClient(endpoint, this.transports);
-                    this['_SO_' + endpoint.name] = this[endpoint.name];
+                    this["_SO_" + endpoint.name] = this[endpoint.name];
                     break;
-                case 'PushPull':
+                case "PushPull":
                     if (this.PullEndpoint) {
                         throw new Error("Only a singly Pushpull endpoint can be constructed per service!");
                     }
                     this[endpoint.name] = new PullClient(endpoint, this.transports, this.descriptor.transports.pushpull.client);
                     this.PullEndpoint = this[endpoint.name];
                     break;
-                case 'Sink':
+                case "Sink":
                     this[endpoint.name] = new SinkClient(endpoint, this.transports, this.descriptor.transports.sink.client);
                     this.SinkEndpoint = this[endpoint.name];
                     break;
