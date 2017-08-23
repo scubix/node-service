@@ -124,7 +124,7 @@ class Client {
         this.transports.source.connect(this._sourceHostname);
         */
         if (global.alerts) {
-            global.alerts.emit("heartbeat_failed", "Heartbeat failed source transport: " + endpointList + " (this._sourceHostname)");
+            global.alerts.emit("alert", "NS_heartbeat_failed", "Node-Service Heartbeat failed source transport: " + endpointList + " (this._sourceHostname)");
         }
     }
 
