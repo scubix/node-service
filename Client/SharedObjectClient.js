@@ -20,9 +20,12 @@ class SharedObjectClient extends EventEmitter{
     }
 
     subscribe(){
-        this.updateTransport.subscribe("_SO_" + this.endpoint.name);
-        this.subscribed = true;
-        this._init();
+        if(!this.subscribed){
+            console.log("Subscribing to", this.endpoint.name);
+            this.updateTransport.subscribe("_SO_" + this.endpoint.name);
+            this.subscribed = true;
+            this._init();
+        }
     }
 
     unsubscribe(){
@@ -91,38 +94,42 @@ class SharedObjectClient extends EventEmitter{
         this.ready = false;
     }
 
-    _init(){
+    _init() {
+        if (!this.initRequested && this.ready === false) {
+            this.initRequested = true;
+            this.data = {};
+            this._v = 0;
+            this.procBuffer = [];
+            this.timeBuffer = [];
 
-        this.data = {};
-        this._v = 0;
-        this.procBuffer = [];
-        this.timeBuffer = [];
+            this.timeSum = 0;
+            this.timeCount = 0;
 
-        this.timeSum = 0;
-        this.timeCount = 0;
-
-        this.outstandingDiffs = 0;
-
-        this.ready = false;
-
-        this.initTransport.send({
-            endpoint: "_SO_" + this.endpoint.name,
-            input: "init"
-        }, (answer) => {
-            this.data = answer.res.data;
-            this._v = answer.res.v;
-            console.log("("+this.endpoint.name + ") Init installed version",this._v);
-            this.procBuffer.splice(0,this._v);
-            this.timeBuffer.splice(0,this._v);
             this.outstandingDiffs = 0;
-            for (let i of this.procBuffer){
-                if (!!i)
-                    this.outstandingDiffs++;
-            }
-            this.ready = true;
-            this._tryApply();
-            this.emit('init');
-        });
+
+            this.ready = false;
+
+            console.log("Request init", this.endpoint.name);
+            this.initTransport.send({
+                endpoint: "_SO_" + this.endpoint.name,
+                input: "init"
+            }, (answer) => {
+                this.data = answer.res.data;
+                this._v = answer.res.v;
+                console.log("(" + this.endpoint.name + ") Init installed version", this._v);
+                this.procBuffer.splice(0, this._v);
+                this.timeBuffer.splice(0, this._v);
+                this.outstandingDiffs = 0;
+                for (let i of this.procBuffer) {
+                    if (!!i)
+                        this.outstandingDiffs++;
+                }
+                this.initRequested = false;
+                this.ready = true;
+                this._tryApply();
+                this.emit('init');
+            });
+        }
     }
 }
 
