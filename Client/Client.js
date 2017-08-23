@@ -108,7 +108,12 @@ class Client {
         }
     }
 
-    _resetHeartbeatTimeout() {
+    _resetHeartbeatTimeout(msg) {
+        /*
+        var now = new Date();
+        var diff = now - msg.time;
+        console.log(new Date().toString(),'Heartbeat', this._sourceHostname, 'diff', diff);
+        */
         clearTimeout(this._heartbeatTimeout);
         this._heartbeatTimeout = setTimeout(this._heartbeatFailed.bind(this), HEARTBEAT_SECONDS * 1000);
     }
@@ -124,7 +129,7 @@ class Client {
         this.transports.source.connect(this._sourceHostname);
         */
         if (global.alerts) {
-            global.alerts.emit("alert", "NS_heartbeat_failed", "Node-Service Heartbeat failed source transport: " + endpointList + " (this._sourceHostname)");
+            global.alerts.emit("alert", "NS_heartbeat_failed", "Node-Service Heartbeat failed source transport: " + endpointList + " (" + this._sourceHostname + ")");
         }
     }
 

@@ -54,8 +54,10 @@ class Service {
 
     _sendHeartbeat(){
         var OTW = {
-            endpoint: '_heartbeat'
+            endpoint: '_heartbeat',
+            time: new Date()
         };
+        //console.log(new Date().toString(), 'Sending heartbeat');
         this.transports.source.send([OTW.endpoint, JSON.stringify(OTW)]);
     }
 
