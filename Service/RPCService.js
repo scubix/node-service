@@ -9,16 +9,14 @@ class RPCService{
         this.stats = {updates: 0};
     }
 
-    call(input, callback){
-        if (this.endpoint.name != input.endpoint)
+    call(data, callback){
+        if (this.endpoint.name != data.endpoint)
             throw ("Wrong handler called!");
 
-        var req = JSON.parse(input.input);
-
-        doValidation(this.endpoint, 'input', req);
+        doValidation(this.endpoint, 'input', data.input);
         this.stats.updates++;
 
-        this.handler(req, (err, res) => {
+        this.handler(data.input, (err, res) => {
 
             if (!err){
                 doValidation(this.endpoint, 'output', res);

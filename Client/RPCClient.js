@@ -28,7 +28,7 @@ class RPCClient {
         }, timeout);
         var postData = JSON.stringify({
             endpoint: this.endpoint.name,
-            input: JSON.stringify(input)
+            input: input
         });
         var options = {
             hostname: this.transport.hostname,
