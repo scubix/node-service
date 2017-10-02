@@ -2,6 +2,7 @@
 
 var zmq = require("zmq");
 var http = require("http");
+var EventEmitter = require("events").EventEmitter;
 
 var RPCService = require("./RPCService");
 var SourceService = require("./SourceService");
@@ -75,13 +76,13 @@ class Service {
     }
 
     _setupRpc(hostname) {
+        this.transports.rpc = new EventEmitter();
+
         var hostnameAndPort = hostname.split(":");
         var url = hostnameAndPort[1].substr(2);
         var port = hostnameAndPort[2];
         var sock = http.createServer(this._rpcCallback.bind(this));
         sock.listen(port, url);
-        sock.on('message', this._rpcCallback.bind(this));
-        this.transports.rpc = sock;
     }
 
     _rpcCallback(req, res) {
@@ -94,13 +95,17 @@ class Service {
             });
             var self = this;
             req.on('end', function () {
+                res.writeHead(200, {'Content-Type': 'application/json'});
                 var req = JSON.parse(body);
                 var handler = self.RPCServices[req.endpoint];
                 if (handler) { // Could be SharedObject, has a different callback
                     handler.call(req, (result) => {
-                        res.writeHead(200, {'Content-Type': 'application/json'});
-                        res.end(JSON.stringify(result));
+                        res.end(result);
                     });
+                }else{
+                    self.transports.rpc.emit("message", req, (result)=>{
+                        res.end(JSON.stringify(result));
+                    })
                 }
             });
         }

@@ -6,8 +6,8 @@ var doValidation = require("../misc/Validation").SharedObjectValidation;
 var differ = require("deep-diff");
 var clone = require("../misc/clone");
 
-class SharedObjectClient extends EventEmitter{
-    constructor(endpoint, transports){
+class SharedObjectClient extends EventEmitter {
+    constructor(endpoint, transports) {
         super();
         if (!transports.rpc || !transports.source)
             throw new Error("Shared object " + endpoint.name + " needs both Source and RPC transports to be configured");
@@ -20,22 +20,22 @@ class SharedObjectClient extends EventEmitter{
         this._flushData();
     }
 
-    subscribe(){
+    subscribe() {
         this.updateTransport.subscribe("_SO_" + this.endpoint.name);
         this.subscribed = true;
         this._init();
     }
 
-    unsubscribe(){
+    unsubscribe() {
         this.updateTransport.unsubscribe("_SO_" + this.endpoint.name);
         this.subscribed = false;
     }
 
-    _processMessage(data){
-        if (data.endpoint == "_SO_" + this.endpoint.name){
+    _processMessage(data) {
+        if (data.endpoint == "_SO_" + this.endpoint.name) {
             var idx = data.message.v - (this._v + 1);
-            if (this.ready && idx < 0){
-                console.error("("+this.endpoint.name + ") Bad version! Reinit!");
+            if (this.ready && idx < 0) {
+                console.error("(" + this.endpoint.name + ") Bad version! Reinit!");
                 return this._init();
             }
             this.procBuffer[idx] = data.message.diffs;
@@ -46,23 +46,23 @@ class SharedObjectClient extends EventEmitter{
         }
     }
 
-    _tryApply(){
+    _tryApply() {
         var totalDiffs = [];
 
-        while(!!this.procBuffer[0]){
+        while (!!this.procBuffer[0]) {
             // Diffs are already reversed by Server!
             var diffs = this.procBuffer.shift();
             this.outstandingDiffs--;
             totalDiffs = diffs.concat(totalDiffs);
 
-            for (let diff of diffs){
+            for (let diff of diffs) {
                 differ.applyChange(this.data, true, diff);
             }
 
             this.timeSum += new Date() - this.timeBuffer.shift();
             this.timeCount++;
-            if (this.timeCount == 200){
-                console.log("("+this.endpoint.name + ") Average time: " + (this.timeSum/200) + " ms");
+            if (this.timeCount == 200) {
+                console.log("(" + this.endpoint.name + ") Average time: " + (this.timeSum / 200) + " ms");
                 this.timeSum = 0;
                 this.timeCount = 0;
             }
@@ -72,8 +72,8 @@ class SharedObjectClient extends EventEmitter{
 
         if (totalDiffs.length > 0) {
             this.emit('update', totalDiffs);
-        }else if (this.ready && this.outstandingDiffs > 10){
-            console.error("("+this.endpoint.name + ") Too many outstanding diffs, missed a version. Reinit.");
+        } else if (this.ready && this.outstandingDiffs > 10) {
+            console.error("(" + this.endpoint.name + ") Too many outstanding diffs, missed a version. Reinit.");
             this._init();
         }
     }
@@ -92,7 +92,7 @@ class SharedObjectClient extends EventEmitter{
         this.ready = false;
     }
 
-    _init(){
+    _init() {
 
         this.data = {};
         this._v = 0;
@@ -121,26 +121,35 @@ class SharedObjectClient extends EventEmitter{
             }
         };
 
-        var req = http.request(options, (answer) => {
-            this.data = answer.res.data;
-            this._v = answer.res.v;
-            console.log("("+this.endpoint.name + ") Init installed version",this._v);
-            this.procBuffer.splice(0,this._v);
-            this.timeBuffer.splice(0,this._v);
-            this.outstandingDiffs = 0;
-            for (let i of this.procBuffer){
-                if (!!i)
-                    this.outstandingDiffs++;
-            }
-            this.ready = true;
-            this._tryApply();
-            this.emit('init');
+        var self = this;
+        var req = http.request(options, (reply) => {
+            var body = "";
+            reply.on('data', function (data) {
+                body += data;
+                console.log("Partial body: " + body);
+            });
+            reply.on('end', function () {
+                var answer = JSON.parse(body);
+                self.data = answer.res.data;
+                self._v = answer.res.v;
+                console.log("(" + self.endpoint.name + ") Init installed version", self._v);
+                self.procBuffer.splice(0, self._v);
+                self.timeBuffer.splice(0, self._v);
+                self.outstandingDiffs = 0;
+                for (let i of self.procBuffer) {
+                    if (!!i)
+                        self.outstandingDiffs++;
+                }
+                self.ready = true;
+                self._tryApply();
+                self.emit('init');
+            });
         });
 
         var self = this;
         req.on('error', (e) => {
             console.error(`problem with request: ${e.message}`);
-            setTimeout(sef.init.bind(self), 1000); // Retry after a second
+            setTimeout(self._init.bind(self), 1000); // Retry after a second
         });
         req.write(postData);
         req.end();

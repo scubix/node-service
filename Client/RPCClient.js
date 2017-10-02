@@ -12,6 +12,7 @@ class RPCClient {
     }
 
     call(input, timeout, callback) {
+        var self = this;
         if (!callback) { // Make compatible with old code
             callback = timeout;
             timeout = 10e3;
@@ -44,16 +45,15 @@ class RPCClient {
             clearTimeout(answer_timeout);
             answer_timeout = null;
             var body = "";
-            req.on('data', function (data) {
+            answer.on('data', function (data) {
                 body += data;
                 console.log("Partial body: " + body);
             });
-            var self = this;
-            req.on('end', function () {
+            answer.on('end', function () {
                 var answer = JSON.parse(body);
 
                 if (!answer.err)
-                    doValidation(this.endpoint, 'output', answer.res);
+                    doValidation(self.endpoint, 'output', answer.res);
                 if (callback) callback(answer.err, answer.res);
             });
         });
