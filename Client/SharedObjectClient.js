@@ -1,5 +1,6 @@
 "use strict";
 
+var http = require("http");
 var EventEmitter = require("events").EventEmitter;
 var doValidation = require("../misc/Validation").SharedObjectValidation;
 var differ = require("deep-diff");
@@ -105,10 +106,22 @@ class SharedObjectClient extends EventEmitter{
 
         this.ready = false;
 
-        this.initTransport.send({
+        var postData = JSON.stringify({
             endpoint: "_SO_" + this.endpoint.name,
             input: "init"
-        }, (answer) => {
+        });
+        var options = {
+            hostname: this.initTransport.hostname,
+            port: this.initTransport.port,
+            path: '/',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        var req = http.request(options, (answer) => {
             this.data = answer.res.data;
             this._v = answer.res.v;
             console.log("("+this.endpoint.name + ") Init installed version",this._v);
@@ -123,6 +136,14 @@ class SharedObjectClient extends EventEmitter{
             this._tryApply();
             this.emit('init');
         });
+
+        var self = this;
+        req.on('error', (e) => {
+            console.error(`problem with request: ${e.message}`);
+            setTimeout(sef.init.bind(self), 1000); // Retry after a second
+        });
+        req.write(postData);
+        req.end();
     }
 }
 

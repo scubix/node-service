@@ -1,7 +1,7 @@
 "use strict";
 
 var zmq = require("zmq");
-var axon = require("axon");
+var http = require("http");
 
 var RPCService = require("./RPCService");
 var SourceService = require("./SourceService");
@@ -10,7 +10,7 @@ var PushService = require("./PushService");
 var SinkService = require("./SinkService");
 
 class Service {
-    constructor(descriptor, handlers, initials){
+    constructor(descriptor, handlers, initials) {
         this.descriptor = descriptor;
         this.transports = {};
         this.handlers = handlers || {};
@@ -20,9 +20,9 @@ class Service {
         this._setupEndpoints();
     }
 
-    _setupTransports(){
-        for(let transport in this.descriptor.transports){
-            switch (transport){
+    _setupTransports() {
+        for (let transport in this.descriptor.transports) {
+            switch (transport) {
                 case 'source':
                     this._setupSource(this.descriptor.transports.source.server);
                     break;
@@ -41,25 +41,25 @@ class Service {
         }
     }
 
-    _setupSource(hostname){
+    _setupSource(hostname) {
         var sock = new zmq.socket('pub');
         this.transports.source = sock;
         sock.bind(hostname);
         this._setupHeartbeat();
     }
 
-    _setupHeartbeat(){
+    _setupHeartbeat() {
         setInterval(this._sendHeartbeat.bind(this), 5 * 1000);
     }
 
-    _sendHeartbeat(){
+    _sendHeartbeat() {
         var OTW = {
             endpoint: '_heartbeat'
         };
         this.transports.source.send([OTW.endpoint, JSON.stringify(OTW)]);
     }
 
-    _setupSink(hostname){
+    _setupSink(hostname) {
         var sock = new zmq.socket('pull');
         this.transports.sink = sock;
 
@@ -67,37 +67,62 @@ class Service {
         sock.on('message', this._sinkCallback.bind(this));
     }
 
-    _sinkCallback(message){
-        if (!this.SinkEndpoint){
+    _sinkCallback(message) {
+        if (!this.SinkEndpoint) {
             throw new Error("Got a pull message, but ot Pull enpoint is connected!");
         }
         this.SinkEndpoint._processMessage(JSON.parse(message));
     }
 
-    _setupRpc(hostname){
-        var sock = new axon.socket('rep');
-        sock.bind(hostname);
+    _setupRpc(hostname) {
+        var hostnameAndPort = hostname.split(":");
+        var url = hostnameAndPort[1].substr(2);
+        var port = hostnameAndPort[2];
+        var sock = http.createServer(this._rpcCallback.bind(this));
+        sock.listen(port, url);
         sock.on('message', this._rpcCallback.bind(this));
         this.transports.rpc = sock;
     }
 
-    _rpcCallback(input, reply){
-        var handler = this.RPCServices[input.endpoint];
-        if (handler) // Could be SharedObject, has a different callback
-            handler.call(input, reply);
+    _rpcCallback(req, res) {
+        if (req.method == 'POST') {
+            console.log("POST");
+            var body = "";
+            req.on('data', function (data) {
+                body += data;
+                console.log("Partial body: " + body);
+            });
+            var self = this;
+            req.on('end', function () {
+                var req = JSON.parse(body);
+                var handler = self.RPCServices[req.endpoint];
+                if (handler) { // Could be SharedObject, has a different callback
+                    handler.call(req, (result) => {
+                        res.writeHead(200, {'Content-Type': 'application/json'});
+                        res.end(JSON.stringify(result));
+                    });
+                }
+            });
+        }
+        else {
+            console.log("GET");
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.end("-");
+        }
+
     }
 
-    _setupPushPull(hostname){
+    _setupPushPull(hostname) {
         var sock = new zmq.socket('push');
         sock.bindSync(hostname);
         this.transports.pushpull = sock;
     }
 
-    _setupEndpoints(){
+    _setupEndpoints() {
         this.RPCServices = {};
 
-        for(let endpoint of this.descriptor.endpoints){
-            switch(endpoint.type){
+        for (let endpoint of this.descriptor.endpoints) {
+            switch (endpoint.type) {
                 case 'RPC':
                     var handler = this.handlers[endpoint.name];
                     if (!handler)

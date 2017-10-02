@@ -2,7 +2,6 @@
 var HEARTBEAT_SECONDS = 10;
 
 var zmq = require("zmq");
-var axon = require("axon");
 var MonitoredSocket = require("./MonitoredSocket");
 
 var RPCClient = require("./RPCClient");
@@ -115,10 +114,11 @@ class Client {
         this.transports.source.connect(this._sourceHostname)
     }
 
-    _setupRpc(hostname){
-        var sock = new axon.socket('req');
-        sock.connect(hostname);
-        this.transports.rpc = sock;
+    _setupRpc(origHostname) {
+        var hostnameAndPort = origHostname.split(":");
+        var hostname = hostnameAndPort[1].substr(2);
+        var port = hostnameAndPort[2];
+        this.transports.rpc = {hostname, port};
     }
 
     _setupPull(hostname){

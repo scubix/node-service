@@ -12,10 +12,9 @@
   "author": "Alexander Zuliani",
   "license": "MIT",
   "dependencies": {
-    "axon": "^2.0.2",
     "deep-diff": "^0.3.3",
     "json.date-extensions": "^1.2.2",
     "schema-inspector": "^1.5.7",
-    "zmq": "^2.13.0"
+    "zmq": "^2.15.3"
   }
 }
