@@ -47,7 +47,6 @@ class RPCClient {
             var body = "";
             answer.on('data', function (data) {
                 body += data;
-                console.log("Partial body: " + body);
             });
             answer.on('end', function () {
                 var answer = JSON.parse(body);

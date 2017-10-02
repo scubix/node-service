@@ -87,11 +87,9 @@ class Service {
 
     _rpcCallback(req, res) {
         if (req.method == 'POST') {
-            console.log("POST");
             var body = "";
             req.on('data', function (data) {
                 body += data;
-                console.log("Partial body: " + body);
             });
             var self = this;
             req.on('end', function () {
@@ -110,7 +108,6 @@ class Service {
             });
         }
         else {
-            console.log("GET");
             res.writeHead(200, {'Content-Type': 'text/html'});
             res.end("-");
         }
