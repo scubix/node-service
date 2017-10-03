@@ -44,6 +44,7 @@ class RPCClient {
             answer_received = true;
             clearTimeout(answer_timeout);
             answer_timeout = null;
+
             var body = "";
             answer.on('data', function (data) {
                 body += data;
@@ -53,7 +54,9 @@ class RPCClient {
 
                 if (!answer.err)
                     doValidation(self.endpoint, 'output', answer.res);
-                if (callback) callback(answer.err, answer.res);
+                if (callback) {
+                    callback(answer.err, answer.res);
+                }
             });
         });
 
@@ -63,7 +66,10 @@ class RPCClient {
             clearTimeout(answer_timeout);
             answer_timeout = null;
 
-            callback(e.message)
+            if(callback) {
+                callback(e.message);
+                callback = null;
+            }
         });
         req.write(postData);
         req.end();
