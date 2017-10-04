@@ -126,7 +126,6 @@ class SharedObjectClient extends EventEmitter {
             var body = "";
             reply.on('data', function (data) {
                 body += data;
-                console.log("Partial body: " + body);
             });
             reply.on('end', function () {
                 var answer = JSON.parse(body);
