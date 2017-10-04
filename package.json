@@ -1,6 +1,6 @@
 {
   "name": "node-service",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Todo",
   "main": "index.js",
   "directories": {
@@ -15,6 +15,6 @@
     "deep-diff": "^0.3.3",
     "json.date-extensions": "^1.2.2",
     "schema-inspector": "^1.5.7",
-    "zmq": "^2.15.3"
+    "zeromq": "4.5.0"
   }
 }

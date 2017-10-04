@@ -1,7 +1,7 @@
 "use strict";
 var HEARTBEAT_SECONDS = 10;
 
-var zmq = require("zmq");
+var zmq = require("zeromq");
 var MonitoredSocket = require("./MonitoredSocket");
 
 var RPCClient = require("./RPCClient");
