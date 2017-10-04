@@ -50,7 +50,7 @@ class Client {
         this.transports.source = msock.sock;
         this.transports.source.connect(hostname);
         this._sourceHostname = hostname;
-        this._setupHeartbeat();
+        // this._setupHeartbeat();
         this.transports.source.on('message', this._sourceCallback.bind(this));
         msock.on('disconnected', this._sourceClosed.bind(this));
         msock.on('connected', this._sourceConnected.bind(this));
