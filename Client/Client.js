@@ -75,7 +75,7 @@ class Client {
     }
 
     _sourceConnected(){
-        this._heartbeatTimeout = setTimeout(this._heartbeatFailed.bind(this), HEARTBEAT_SECONDS * 1000);
+        // this._heartbeatTimeout = setTimeout(this._heartbeatFailed.bind(this), HEARTBEAT_SECONDS * 1000);
         // Loop endpoints
         for(let endpoint of this.descriptor.endpoints) {
             if (endpoint.type == 'Source' || endpoint.type == 'SharedObject') {
