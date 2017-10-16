@@ -3,6 +3,7 @@
 var clone = require("../misc/clone");
 var doValidate = require("../misc/Validation").SharedObjectValidation;
 var differ = require("deep-diff");
+var objectObservable = require("object-observer");
 
 class SharedObjectService{
     constructor(endpoint, transports, initial){
@@ -12,11 +13,38 @@ class SharedObjectService{
         doValidate(endpoint, initial);
         this.data = initial;
         this._lastTransmit = clone(initial);
+
         this._v = 0;
         this.endpoint = endpoint;
         transports.rpc.on('message', this._processRPC.bind(this));
         this.diffTransport = transports.source;
         this.stats = {updates: 0};
+    }
+
+    get data(){
+        return this._data;
+    }
+
+    set data(value) {
+        this._data = objectObservable.Observable.from(value);
+        this._data.observe((changes) => {
+            var now = new Date();
+            var diffs = [];
+            changes.forEach(change => {
+                if(change && change.oldValue != change.value) {
+                    diffs.push({type: change.type, path: change.path, value: change.value});
+                }
+            });
+            if(diffs.length) {
+                this.stats.updates++;
+                this._v++;
+                var OTW = {
+                    endpoint: "_SO_" + this.endpoint.name,
+                    message: {diffs, v: this._v, now}
+                };
+                this.diffTransport.send([OTW.endpoint, JSON.stringify(OTW)]);
+            }
+        })
     }
 
     _processRPC(message, reply){
@@ -30,12 +58,13 @@ class SharedObjectService{
     }
 
     notify(hint){
+        return
         var now = new Date();
 
         if (!hint)
             hint = [];
 
-        doValidate(this.endpoint, this.data, hint);
+        doValidate(this.endpoint, this._data, hint);
 
         var diffs = diffAndReverseAndApplyWithHint(this._lastTransmit, this.data, hint);
         if (diffs && diffs.length) {

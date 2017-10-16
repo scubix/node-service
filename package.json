@@ -12,9 +12,14 @@
   "author": "Alexander Zuliani",
   "license": "MIT",
   "dependencies": {
+    "apply-changes": "0.0.1",
     "deep-diff": "^0.3.3",
     "json.date-extensions": "^1.2.2",
+    "object-observer": "^0.2.3",
+    "observable": "^2.1.4",
+    "proxy-observe": "0.0.21",
     "schema-inspector": "^1.5.7",
+    "universal-observer": "^1.0.1",
     "zeromq": "4.5.0"
   }
 }

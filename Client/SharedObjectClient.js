@@ -50,13 +50,30 @@ class SharedObjectClient extends EventEmitter {
         var totalDiffs = [];
 
         while (!!this.procBuffer[0]) {
-            // Diffs are already reversed by Server!
             var diffs = this.procBuffer.shift();
             this.outstandingDiffs--;
             totalDiffs = diffs.concat(totalDiffs);
 
+            var ptr = this.data;
+            var lastKey;
             for (let diff of diffs) {
-                differ.applyChange(this.data, true, diff);
+                diff.path.forEach((key, index)=>{
+                    lastKey = key;
+                    if(index !== diff.path.length -1) {
+                        ptr = ptr[key];
+                    }
+                });
+                if(lastKey) {
+                    switch (diff.type) {
+                        case "insert":
+                        case "update":
+                            ptr[lastKey] = diff.value;
+                            break;
+                        case "delete":
+                            delete ptr[lastKey];
+                            break;
+                    }
+                }
             }
 
             this.timeSum += new Date() - this.timeBuffer.shift();
@@ -67,7 +84,7 @@ class SharedObjectClient extends EventEmitter {
                 this.timeCount = 0;
             }
 
-            this._v++;
+            console.log(this._v++);
         }
 
         if (totalDiffs.length > 0) {
