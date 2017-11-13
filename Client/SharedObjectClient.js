@@ -1,10 +1,9 @@
 "use strict";
+const NS_PER_SEC = 1e9;
 
 var http = require("http");
 var EventEmitter = require("events").EventEmitter;
-var doValidation = require("../misc/Validation").SharedObjectValidation;
 var differ = require("deep-diff");
-var clone = require("../misc/clone");
 
 class SharedObjectClient extends EventEmitter {
     constructor(endpoint, transports) {
@@ -41,7 +40,7 @@ class SharedObjectClient extends EventEmitter {
             this.procBuffer[idx] = data.message.diffs;
             this.timeBuffer[idx] = data.message.now;
             var hrend = process.hrtime(data.timing);
-            this.emit('timing', (1000*hrend[0]) + (hrend[1]/1000000));
+            this.emit('timing', hrend[0] * NS_PER_SEC  + hrend[1]);
             this.outstandingDiffs++;
             process.nextTick(this._tryApply.bind(this));
         }
