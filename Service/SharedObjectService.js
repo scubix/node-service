@@ -43,8 +43,7 @@ class SharedObjectService{
             this._v++;
             var OTW = {
                 endpoint: "_SO_" + this.endpoint.name,
-                message: {diffs, v: this._v, now},
-                timing: process.hrtime()
+                message: {diffs, v: this._v, now}
             };
             this.diffTransport.send([OTW.endpoint,JSON.stringify(OTW)]);
         }

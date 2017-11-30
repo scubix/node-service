@@ -39,8 +39,7 @@ class SharedObjectClient extends EventEmitter {
             }
             this.procBuffer[idx] = data.message.diffs;
             this.timeBuffer[idx] = data.message.now;
-            var hrend = process.hrtime(data.timing);
-            this.emit('timing', hrend[0] * NS_PER_SEC  + hrend[1]);
+            this.emit('timing', (new Date() - data.message.now) * 1000000);
             this.outstandingDiffs++;
             process.nextTick(this._tryApply.bind(this));
         }
